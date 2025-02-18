@@ -1,1 +1,380 @@
-ddslkfdfl;sksdf
+
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <windows.h>
+
+using namespace std;
+
+struct Laptop {
+    int rank;
+    string name;
+    int year;
+    string place;
+    double market;
+    double capital;
+};
+
+struct IndexDoub {
+    double key;
+    int recordIndex;
+};
+
+struct IndexInt {
+    double key;
+    int recordIndex;
+};
+
+const int maxSize = 10;
+Laptop* laptops = new Laptop[maxSize];
+IndexDoub* marketIndex = new IndexDoub[maxSize];
+IndexDoub* capitalIndex = new IndexDoub[maxSize];
+int currentSize = 0;
+
+void showMenu() {
+    cout << "\nМеню:\n";
+    cout << "1. Показать все компании\n";
+    cout << "2. Сортировать и вывести по доле на рынке (через индекс)\n";
+    cout << "3. Сортировать и вывести по капитализации (через индекс)\n";
+    cout << "4. Добавить компанию\n";
+    cout << "5. Удалить компанию по названию\n";
+    cout << "6. Удалить компанию по месту в рейтинге\n";
+    cout << "7. Поиск рекурсией по рейтингу\n";
+    cout << "8. Поиск итерацией по году основания\n";
+    cout << "9. Редактировать компанию\n";
+    cout << "0. Выход\n";
+    cout << "Выберите действие: ";
+}
+
+void loadData() {
+    currentSize = 5;
+    laptops[0] = { 1, "Lenovo", 1984, "Китай", 24.8, 16 };
+    laptops[1] = { 2, "HP", 1939, "США", 21.9, 27 };
+    laptops[2] = { 3, "Dell", 1984, "США", 16.6, 28 };
+    laptops[3] = { 4, "Apple", 1976, "США", 9.0, 2890 };
+    laptops[4] = { 5, "Asus", 1989, "Тайвань", 7.1, 11 };
+}
+
+void printLaptop(const Laptop& laptop) {
+    cout << "\nМесто в рейтинге: " << laptop.rank;
+    cout << "\nНазвание: " << laptop.name;
+    cout << "\nГод основания: " << laptop.year;
+    cout << "\nДоля на рынке: " << round(laptop.market * 10) / 10 << "%";
+    cout << "\nКапитализация: $" << laptop.capital << " млрд";
+    cout << "\nМесто основания: " << laptop.place << "\n";
+}
+
+void buildIndexDouble(IndexDoub* indexArray, double Laptop::* key) {
+    for (int i = 0; i < currentSize; ++i) {
+        indexArray[i].key = laptops[i].*key;
+        indexArray[i].recordIndex = i;
+    }
+
+    for (int i = 1; i < currentSize; ++i) {
+        IndexDoub temp = indexArray[i];
+        int j = i - 1;
+
+        while (j >= 0 && indexArray[j].key < temp.key) {
+            indexArray[j + 1] = indexArray[j];
+            --j;
+        }
+        indexArray[j + 1] = temp;
+    }
+}
+
+void buildIndexInt(IndexInt* indexArray, int Laptop::* key) {
+    for (int i = 0; i < currentSize; ++i) {
+        indexArray[i].key = laptops[i].*key;
+        indexArray[i].recordIndex = i;
+    }
+
+    for (int i = 1; i < currentSize; ++i) {
+        IndexInt temp = indexArray[i];
+        int j = i - 1;
+
+        while (j >= 0 && indexArray[j].key > temp.key) {
+            indexArray[j + 1] = indexArray[j];
+            --j;
+        }
+        indexArray[j + 1] = temp;
+    }
+}
+
+void printByIndex(IndexDoub* indexArray) {
+    for (int i = 0; i < currentSize; ++i) {
+        printLaptop(laptops[indexArray[i].recordIndex]);
+    }
+}
+
+void printByIndex(IndexInt* indexArray) {
+    for (int i = 0; i < currentSize; ++i) {
+        printLaptop(laptops[indexArray[i].recordIndex]);
+    }
+}
+
+void nameDelete(IndexInt* nameIndex) {
+    string name;
+    cout << "Введите название компании для удаления: ";
+    cin >> name;
+
+    for (int i = 0; i < currentSize; ++i) {
+        if (laptops[nameIndex[i].recordIndex].name == name) {
+            int toDelete = nameIndex[i].recordIndex;
+
+            for (int j = toDelete; j < currentSize - 1; ++j) {
+                laptops[j] = laptops[j + 1];
+            }
+            --currentSize;
+
+            cout << "Компания удалена.\n";
+            return;
+        }
+    }
+    cout << "Компания с указанным названием не найдена.\n";
+}
+
+void rankDelete(IndexInt* rankIndex, int rank) {
+    for (int i = 0; i < currentSize; ++i) {
+        if (rankIndex[i].key == rank) {
+            int toDelete = rankIndex[i].recordIndex;
+
+            for (int j = toDelete; j < currentSize - 1; ++j) {
+                laptops[j] = laptops[j + 1];
+            }
+            --currentSize;
+
+            cout << "Компания удалена.\n";
+            return;
+        }
+    }
+    cout << "Компания с указанным местом в рейтинге не найдена.\n";
+}
+
+void editCompany(IndexInt* rankIndex, int rank) {
+    for (int i = 0; i < currentSize; ++i) {
+        if (rankIndex[i].key == rank) {
+            int edit = rankIndex[i].recordIndex;
+
+            cout << "Введите новые данные компании:\n";
+            cout << "Место в рейтинге: ";
+            cin >> laptops[edit].rank;
+            cout << "Название: ";
+            cin >> laptops[edit].name;
+            cout << "Год основания: ";
+            cin >> laptops[edit].year;
+            cout << "Место основания: ";
+            cin >> laptops[edit].place;
+            cout << "Доля на рынке: ";
+            cin >> laptops[edit].market;
+            cout << "Капитализация (в млрд $): ";
+            cin >> laptops[edit].capital;
+
+            cout << "Обновленные данные:\n";
+            printLaptop(laptops[edit]);
+            return;
+        }
+    }
+    cout << "Компания с указанным местом в рейтинге не найдена.\n";
+}
+
+void rankRecursive(IndexInt* indexArray, int left, int right, int rank) {
+    if (left > right) {
+        cout << "Компания с указанным местом в рейтинге не найдена.\n";
+        return;
+    }
+
+    int mid = left + (right - left) / 2;
+
+    if (indexArray[mid].key == rank) {
+        cout << "Компания найдена:\n";
+        printLaptop(laptops[indexArray[mid].recordIndex]);
+    }
+    else if (indexArray[mid].key > rank) {
+        rankRecursive(indexArray, left, mid - 1, rank);
+    }
+    else {
+        rankRecursive(indexArray, mid + 1, right, rank);
+    }
+}
+
+void yearIterative(IndexInt* indexArray, int year) {
+    int left = 0;
+    int right = currentSize - 1;
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        if (indexArray[mid].key == year) {
+            cout << "Компания найдена:\n";
+            printLaptop(laptops[indexArray[mid].recordIndex]);
+            return;
+        }
+        else if (indexArray[mid].key > year) {
+            right = mid - 1;
+        }
+        else {
+            left = mid + 1;
+        }
+    }
+
+    cout << "Компания с указанным годом основания не найдена.\n";
+}
+
+void newCompany() {
+    if (currentSize >= maxSize) {
+        cout << "Массив заполнен, невозможно добавить новую компанию.\n";
+        return;
+    }
+
+    Laptop laptop;
+    cout << "Введите данные новой компании:\n";
+    cout << "Название: ";
+    cin >> laptop.name;
+    cout << "Год основания: ";
+    cin >> laptop.year;
+    cout << "Место основания: ";
+    cin >> laptop.place;
+    cout << "Доля на рынке: ";
+    cin >> laptop.market;
+    cout << "Капитализация (в млрд $): ";
+    cin >> laptop.capital;
+
+    int left = 0;
+    int right = currentSize - 1;
+    int insertIndex = currentSize; 
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        if (laptops[mid].market > laptop.market) {
+            left = mid + 1; 
+        }
+        else {
+            insertIndex = mid; 
+            right = mid - 1; 
+        }
+    }
+
+    for (int i = currentSize; i > insertIndex; i--) {
+        laptops[i] = laptops[i - 1];
+    }
+
+    laptops[insertIndex] = laptop;
+    currentSize++;
+
+    for (int i = 0; i < currentSize; ++i) {
+        laptops[i].rank = i + 1;
+    }
+
+    cout << "\nКомпания добавлена и размещена в рейтинге\n";
+}
+
+
+int findIndexByRank(int rank) {
+    for (int i = 0; i < currentSize; ++i) {
+        if (laptops[i].rank == rank) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int main() {
+
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+
+    cout << "Задание 1";
+    cout << "\nРейтинг выстроен по капитализации\n";
+
+    loadData();
+
+    while (true) {
+        showMenu();
+        int choice;
+        cin >> choice;
+
+        if (choice == 0) {
+            cout << "Выход из программы...\n";
+            break;
+        }
+
+        switch (choice) {
+        case 1:
+            for (int i = 1; i < currentSize; ++i) {
+                Laptop temp = laptops[i];
+                int j = i - 1;
+
+                while (j >= 0 && laptops[j].rank > temp.rank) {
+                    laptops[j + 1] = laptops[j];
+                    --j;
+                }
+                laptops[j + 1] = temp;
+            }
+
+            for (int i = 0; i < currentSize; ++i) {
+                printLaptop(laptops[i]);
+            }
+            break;
+        case 2:
+            buildIndexDouble(marketIndex, &Laptop::market);
+            cout << "\nКомпании, отсортированные по доле на рынке:\n";
+            printByIndex(marketIndex);
+            break;
+        case 3:
+            buildIndexDouble(capitalIndex, &Laptop::capital);
+            cout << "\nКомпании, отсортированные по капитализации:\n";
+            printByIndex(capitalIndex);
+            break;
+        case 4:
+            newCompany();
+            break;
+        case 5: {
+            IndexInt nameIndex[maxSize];
+            buildIndexInt(nameIndex, &Laptop::rank); // Можно использовать любой ключ для создания индекса
+            nameDelete(nameIndex);
+            break;
+        }
+        case 6: {
+            int rank;
+            cout << "Введите место в рейтинге компании для удаления: ";
+            cin >> rank;
+            IndexInt rankIndex[maxSize];
+            buildIndexInt(rankIndex, &Laptop::rank);
+            rankDelete(rankIndex, rank);
+            break;
+        }
+        case 7: {
+            int rank;
+            cout << "Введите место в рейтинге для поиска: ";
+            cin >> rank;
+            IndexInt rankIndex[maxSize];
+            buildIndexInt(rankIndex, &Laptop::rank);
+            rankRecursive(rankIndex, 0, currentSize - 1, rank);
+            break;
+        }
+        case 8: {
+            int year;
+            cout << "Введите год основания для поиска: ";
+            cin >> year;
+            IndexInt yearIndex[maxSize];
+            buildIndexInt(yearIndex, &Laptop::year);
+            yearIterative(yearIndex, year);
+            break;
+        }
+        case 9: {
+            int rank;
+            cout << "Введите номер компании в рейтинге, которую вы хотите изменить: ";
+            cin >> rank;
+            IndexInt rankIndex[maxSize];
+            buildIndexInt(rankIndex, &Laptop::rank);
+            editCompany(rankIndex, rank);
+            break;
+        }
+
+        default:
+            cout << "Неверный выбор. Попробуйте еще раз.\n";
+        }
+    }
+
+    return 0;
+}
